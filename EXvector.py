@@ -3,13 +3,13 @@ import torch.nn as nn
 from functions import ReverseLayerF
 
 
-class CrossNetwork(nn.Module):
+class Mapping(nn.Module):
     """
     Cross Network
     """
 
     def __init__(self, layer_num, input_dim):
-        super(CrossNetwork, self).__init__()
+        super(Mapping, self).__init__()
         self.layer_num = layer_num
 
         # 定义网络层的参数   221*3       三个
@@ -28,7 +28,7 @@ class CrossNetwork(nn.Module):
         x = x_0.clone()  # 32*221*1
         xT = x_0.clone().permute((0, 2, 1))  # （None, 1, dim)  32*1*221
         for i in range(self.layer_num):
-            x = torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i]) + self.cross_bias[i] + x  # (None, dim, 1)32*221*1            bmm（32*221*1，32*1*221）， W=221*1， b=221*1
+            x = torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i])*torch.sigmoid( torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i])) + self.cross_bias[i] + x  # (None, dim, 1)32*221*1            bmm（32*221*1，32*1*221）， W=221*1， b=221*1
             xT = x.clone().permute((0, 2, 1))  # (None, 1, dim)
 
         x = torch.squeeze(x)  # (None, dim) 32*221  再降维
@@ -43,7 +43,7 @@ class EXvector(nn.Module):
         self.f_relu1= nn.ReLU(True)
         self.f_drop1= nn.Dropout()
 
-        self.cross = CrossNetwork(1, 1200)
+        self.cross = Mapping(1, 1200)
         self.f_fc2= nn.Linear(1200, 1200)
         self.f_bn2= nn.BatchNorm1d(1200)
         self.f_relu2= nn.ReLU(True)
