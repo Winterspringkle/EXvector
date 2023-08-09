@@ -12,7 +12,10 @@ class Mapping(nn.Module):
         super(Mapping, self).__init__()
         self.layer_num = layer_num
 
-        # 定义网络层的参数   221*3       三个
+        self.atten_weights = nn.ParameterList([
+            nn.Parameter(torch.rand(input_dim, input_dim))
+            for i in range(self.layer_num)
+        ])
         self.cross_weights = nn.ParameterList([
             nn.Parameter(torch.rand(input_dim, 1))
             for i in range(self.layer_num)
@@ -28,7 +31,7 @@ class Mapping(nn.Module):
         x = x_0.clone()  # 32*221*1
         xT = x_0.clone().permute((0, 2, 1))  # （None, 1, dim)  32*1*221
         for i in range(self.layer_num):
-            x = torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i])*torch.sigmoid( torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i])) + self.cross_bias[i] + x  # (None, dim, 1)32*221*1            bmm（32*221*1，32*1*221）， W=221*1， b=221*1
+            x = torch.matmul(torch.bmm(x_0, xT), self.cross_weights[i])*torch.sigmoid(self.atten_weights[i]) + self.cross_bias[i] + x  # (None, dim, 1)32*221*1            bmm（32*221*1，32*1*221）， W=221*1， b=221*1
             xT = x.clone().permute((0, 2, 1))  # (None, 1, dim)
 
         x = torch.squeeze(x)  # (None, dim) 32*221  再降维
